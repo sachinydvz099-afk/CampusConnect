@@ -1,0 +1,32 @@
+{
+  "name": "campusconnect-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CampusConnect — College Campus Services & Support Platform (Final Year BCA Project)",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "seed": "npm run seed --prefix backend",
+    "test:api": "npm run test:api --prefix backend"
+  },
+  "keywords": [
+    "campus-services",
+    "bca-project",
+    "react",
+    "vite",
+    "typescript",
+    "express",
+    "prisma",
+    "postgresql",
+    "tailwind"
+  ],
+  "author": "CampusConnect Team",
+  "license": "MIT"
+}

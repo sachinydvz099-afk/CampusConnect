@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  STAFF
+  ADMIN
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum RequestStatus {
+  SUBMITTED
+  IN_REVIEW
+  ASSIGNED
+  WAITING_FOR_STUDENT
+  RESOLVED
+  CLOSED
+}
+
+enum AppointmentStatus {
+  BOOKED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum NotificationType {
+  REQUEST_UPDATE
+  APPOINTMENT_UPDATE
+  SYSTEM_NOTICE
+}
+
+model User {
+  id               String   @id @default(uuid())
+  email            String   @unique
+  passwordHash     String
+  fullName         String
+  role             Role     @default(STUDENT)
+  studentOrStaffId String   @unique
+  department       String
+  phone            String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  staffServices       ServiceStaff[]
+  assignedRequests    ServiceRequest[]       @relation("AssignedStaff")
+  submittedRequests   ServiceRequest[]       @relation("StudentRequests")
+  comments            RequestComment[]
+  statusChanges       RequestStatusHistory[]
+  staffSlots          AppointmentSlot[]      @relation("StaffSlots")
+  bookedAppointments  Appointment[]          @relation("StudentAppointments")
+  staffAppointments   Appointment[]          @relation("StaffAppointments")
+  notifications       Notification[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model Service {
+  id           String   @id @default(uuid())
+  name         String
+  category     String
+  description  String
+  location     String
+  hours        String
+  contactEmail String
+  contactPhone String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  staffAssignments ServiceStaff[]
+  requests         ServiceRequest[]
+  appointmentSlots AppointmentSlot[]
+  appointments     Appointment[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model ServiceStaff {
+  id        String   @id @default(uuid())
+  serviceId String
+  userId    String
+  roleTitle String?
+  createdAt DateTime @default(now())
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, userId])
+}
+
+model ServiceRequest {
+  id              String        @id @default(uuid())
+  requestNumber   String        @unique
+  subject         String
+  description     String
+  priority        Priority      @default(MEDIUM)
+  status          RequestStatus @default(SUBMITTED)
+  serviceId       String
+  studentId       String
+  assignedStaffId String?
+  attachmentUrl   String?
+  resolvedAt      DateTime?
+  closedAt        DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  service       Service                @relation(fields: [serviceId], references: [id])
+  student       User                   @relation("StudentRequests", fields: [studentId], references: [id])
+  assignedStaff User?                  @relation("AssignedStaff", fields: [assignedStaffId], references: [id])
+  statusHistory RequestStatusHistory[]
+  comments      RequestComment[]
+
+  @@index([studentId])
+  @@index([assignedStaffId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RequestStatusHistory {
+  id          String        @id @default(uuid())
+  requestId   String
+  changedById String
+  oldStatus   RequestStatus?
+  newStatus   RequestStatus
+  note        String?
+  createdAt   DateTime      @default(now())
+
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  changedBy User           @relation(fields: [changedById], references: [id])
+
+  @@index([requestId])
+}
+
+model RequestComment {
+  id                 String   @id @default(uuid())
+  requestId          String
+  authorId           String
+  message            String
+  isPrivateStaffNote Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  request ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author  User           @relation(fields: [authorId], references: [id])
+
+  @@index([requestId])
+  @@index([isPrivateStaffNote])
+}
+
+model AppointmentSlot {
+  id          String   @id @default(uuid())
+  serviceId   String
+  staffId     String
+  startTime   DateTime
+  endTime     DateTime
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  service     Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff       User         @relation("StaffSlots", fields: [staffId], references: [id], onDelete: Cascade)
+  appointment Appointment?
+
+  @@index([serviceId, staffId, startTime])
+  @@index([isAvailable])
+}
+
+model Appointment {
+  id                String            @id @default(uuid())
+  appointmentNumber String            @unique
+  serviceId         String
+  staffId           String
+  studentId         String
+  slotId            String?           @unique
+  startTime         DateTime
+  endTime           DateTime
+  meetingLocation   String
+  status            AppointmentStatus @default(BOOKED)
+  notes             String?
+  cancelledReason   String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  service Service          @relation(fields: [serviceId], references: [id])
+  staff   User             @relation("StaffAppointments", fields: [staffId], references: [id])
+  student User             @relation("StudentAppointments", fields: [studentId], references: [id])
+  slot    AppointmentSlot? @relation(fields: [slotId], references: [id])
+
+  @@index([studentId])
+  @@index([staffId])
+  @@index([serviceId])
+  @@index([startTime])
+  @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM_NOTICE)
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
