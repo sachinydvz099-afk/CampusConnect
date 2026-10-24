@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CampusConnect</title>
+    <script>
+      // Single Page Application redirect for GitHub Pages
+      (function() {
+        var path = window.location.pathname;
+        var repoName = '/CampusConnect';
+        var cleanPath = path.startsWith(repoName) ? path.slice(repoName.length) : path;
+        var destination = (path.startsWith(repoName) ? repoName : '') + '/#' + cleanPath + window.location.search;
+        window.location.replace(destination);
+      })();
+    </script>
+  </head>
+  <body style="font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f8fafc; color: #334155;">
+    <div style="text-align: center;">
+      <h2 style="margin-bottom: 8px;">Loading CampusConnect...</h2>
+      <p style="color: #64748b; font-size: 14px;">Redirecting you to the requested page.</p>
+    </div>
+  </body>
+</html>

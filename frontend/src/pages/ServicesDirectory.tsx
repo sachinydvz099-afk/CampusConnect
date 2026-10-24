@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Filter,
   Plus,
+  Compass,
 } from 'lucide-react';
 
 export const ServicesDirectory: React.FC = () => {
